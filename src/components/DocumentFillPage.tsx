@@ -29,7 +29,7 @@ const DocumentFillPage = ({ extractedData, certificateData, selectedDocument, on
     
     selectedDocument.fields.forEach(field => {
       if (field.mappedTo && allData[field.mappedTo]) {
-        initialData[field.name] = allData[field.mappedTo] as string;
+        initialData[field.name] = String(allData[field.mappedTo]);
       }
     });
     setFormData(initialData);
@@ -93,7 +93,7 @@ const DocumentFillPage = ({ extractedData, certificateData, selectedDocument, on
   const getSourceValue = (mappedTo: string | undefined) => {
     if (!mappedTo) return null;
     const allData = { ...extractedData, ...certificateData };
-    return allData[mappedTo];
+    return String(allData[mappedTo] || '');
   };
 
   return (

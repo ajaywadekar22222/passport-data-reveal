@@ -7,64 +7,10 @@ import { DocumentTemplate } from "../pages/Index";
 interface DocumentSelectionPageProps {
   onDocumentSelect: (document: DocumentTemplate) => void;
   onBackToData: () => void;
+  templates: DocumentTemplate[];
 }
 
-const DocumentSelectionPage = ({ onDocumentSelect, onBackToData }: DocumentSelectionPageProps) => {
-  // Mock document templates with updated field mappings for your JSON structure
-  const documentTemplates: DocumentTemplate[] = [
-    {
-      id: "seamans-certificate-1",
-      name: "Seaman's Certificate",
-      type: "certificate",
-      fields: [
-        { id: "cert-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
-        { id: "cert-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
-        { id: "cert-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
-        { id: "cert-cob", name: "countryOfBirth", label: "Country of Birth", type: "text", required: true, mappedTo: "cob" },
-        { id: "cert-capacity", name: "capacity", label: "Capacity", type: "text", required: true, mappedTo: "capacity" },
-        { id: "cert-stcw", name: "stcwCertificate", label: "STCW Certificate No", type: "text", required: true, mappedTo: "certificateNoStcw" },
-      ]
-    },
-    {
-      id: "crew-id-card-1",
-      name: "Crew ID Card",
-      type: "id-card",
-      fields: [
-        { id: "id-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
-        { id: "id-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
-        { id: "id-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
-        { id: "id-sex", name: "sex", label: "Sex", type: "text", required: true, mappedTo: "sex" },
-        { id: "id-hair", name: "hairColor", label: "Hair Color", type: "text", required: false, mappedTo: "hair" },
-        { id: "id-eyes", name: "eyeColor", label: "Eye Color", type: "text", required: false, mappedTo: "eyes" },
-      ]
-    },
-    {
-      id: "training-certificate-1",
-      name: "Training Certificate",
-      type: "training",
-      fields: [
-        { id: "train-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
-        { id: "train-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
-        { id: "train-h2s", name: "h2sCertificate", label: "H2S Certificate", type: "text", required: false, mappedTo: "certificateNoH2s" },
-        { id: "train-boset", name: "bosetCertificate", label: "BOSET Certificate", type: "text", required: false, mappedTo: "certificateNoBoset" },
-        { id: "train-palau1", name: "palauCertificate1", label: "Palau Certificate 1", type: "text", required: false, mappedTo: "certificateNoPalau1" },
-      ]
-    },
-    {
-      id: "employment-record-1",
-      name: "Employment Record",
-      type: "employment",
-      fields: [
-        { id: "emp-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
-        { id: "emp-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
-        { id: "emp-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
-        { id: "emp-citizenship", name: "citizenship", label: "Citizenship", type: "text", required: true, mappedTo: "citizenship" },
-        { id: "emp-capacity", name: "capacity", label: "Capacity", type: "text", required: true, mappedTo: "capacity" },
-        { id: "emp-submitDate", name: "submitDate", label: "Submit Date", type: "date", required: false, mappedTo: "submitDate" },
-      ]
-    }
-  ];
-
+const DocumentSelectionPage = ({ onDocumentSelect, onBackToData, templates }: DocumentSelectionPageProps) => {
   const getDocumentIcon = (type: string) => {
     switch (type) {
       case "certificate": return Award;
@@ -92,7 +38,7 @@ const DocumentSelectionPage = ({ onDocumentSelect, onBackToData }: DocumentSelec
 
       {/* Document Templates Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
-        {documentTemplates.map((template) => {
+        {templates.map((template) => {
           const IconComponent = getDocumentIcon(template.type);
           return (
             <Card 
@@ -133,12 +79,28 @@ const DocumentSelectionPage = ({ onDocumentSelect, onBackToData }: DocumentSelec
                       </p>
                     )}
                   </div>
+                  {template.imageUrl && template.imageUrl !== 'pdf-uploaded' && (
+                    <div className="mt-3">
+                      <img 
+                        src={template.imageUrl} 
+                        alt={template.name}
+                        className="w-full h-24 object-cover rounded border"
+                      />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {templates.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg mb-4">No document templates available</p>
+          <p className="text-gray-400">Contact your administrator to add templates</p>
+        </div>
+      )}
 
       {/* Back Button */}
       <div className="text-center">
