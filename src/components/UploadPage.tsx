@@ -1,140 +1,130 @@
+
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Image as ImageIcon, FileInput } from "lucide-react";
+import { Upload, Image as ImageIcon, FileInput, Sparkles, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { PassportData, CertificateData } from "../pages/Index";
+import { ExtractedData } from "../pages/Index";
 
 interface UploadPageProps {
-  onImagesUpload: (front: string, back: string) => void;
-  onDataExtraction: (data: PassportData, certificates: CertificateData) => void;
-  frontImage: string | null;
-  backImage: string | null;
+  onImagesUpload: (images: string[]) => void;
+  onDataExtraction: (data: ExtractedData) => void;
+  uploadedImages: string[];
 }
 
-const UploadPage = ({ onImagesUpload, onDataExtraction, frontImage, backImage }: UploadPageProps) => {
-  const [isDraggingFront, setIsDraggingFront] = useState(false);
-  const [isDraggingBack, setIsDraggingBack] = useState(false);
+const UploadPage = ({ onImagesUpload, onDataExtraction, uploadedImages }: UploadPageProps) => {
+  const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const frontInputRef = useRef<HTMLInputElement>(null);
-  const backInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleDragOver = (e: React.DragEvent, type: 'front' | 'back') => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (type === 'front') setIsDraggingFront(true);
-    else setIsDraggingBack(true);
+    setIsDragging(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent, type: 'front' | 'back') => {
+  const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    if (type === 'front') setIsDraggingFront(false);
-    else setIsDraggingBack(false);
+    setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent, type: 'front' | 'back') => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (type === 'front') setIsDraggingFront(false);
-    else setIsDraggingBack(false);
+    setIsDragging(false);
     
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-      handleFileSelection(files[0], type);
+      handleMultipleFileSelection(files);
     }
   };
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'front' | 'back') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelection(file, type);
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleMultipleFileSelection(Array.from(files));
     }
   };
 
-  const handleFileSelection = (file: File, type: 'front' | 'back') => {
-    if (!file.type.startsWith('image/')) {
+  const handleMultipleFileSelection = (files: File[]) => {
+    const validFiles = files.filter(file => 
+      file.type.startsWith('image/') || file.type === 'application/pdf'
+    );
+
+    if (validFiles.length === 0) {
       toast({
         title: "Invalid file type",
-        description: "Please upload an image file (JPEG, PNG, etc.)",
+        description: "Please upload image files (JPEG, PNG) or PDF documents",
         variant: "destructive",
       });
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      
-      if (type === 'front') {
-        onImagesUpload(result, backImage || '');
-      } else {
-        onImagesUpload(frontImage || '', result);
-      }
-      
-      toast({
-        title: `${type === 'front' ? 'Front' : 'Back'} image uploaded`,
-        description: `Your passport ${type} page has been uploaded successfully.`,
+    const promises = validFiles.map(file => {
+      return new Promise<string>((resolve) => {
+        if (file.type === 'application/pdf') {
+          resolve('pdf-document');
+        } else {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        }
       });
-    };
-    reader.readAsDataURL(file);
+    });
+
+    Promise.all(promises).then(results => {
+      onImagesUpload(results);
+      toast({
+        title: "Documents uploaded successfully",
+        description: `${validFiles.length} document(s) ready for processing`,
+      });
+    });
   };
 
-  const processWithChatGPT = async (frontImageData: string, backImageData: string) => {
-    // This would normally call ChatGPT API with vision capabilities
-    // For now, we'll simulate the response with your JSON structure
+  const processWithAI = async (imageData: string[]) => {
+    // Simulate AI processing with ChatGPT Vision API
+    const prompt = `Extract all personal and certificate data from these documents in JSON format. 
+    Return structured data for: personal info, passport details, and all certificate numbers.`;
     
-    const prompt = `Extract passport and certificate data from these images in JSON format. 
-    Return two objects: passportData and certificateData with the following structure:
-    
-    passportData: {
-      lastName, firstName, dob, cob, address, citizenship, height, weight, sex, hair, eyes, fatherName, motherName, submitDate, passport, capacity
-    }
-    
-    certificateData: {
-      certificateNoStcw, certificateNoStsdsd, certificateNoH2s, certificateNoBoset, certificateNoPalau1, certificateNoPalau2
-    }`;
-    
-    console.log("Processing images with prompt:", prompt);
+    console.log("Processing documents with AI prompt:", prompt);
+    console.log("Document count:", imageData.length);
     
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
     
-    // Mock extracted data matching your JSON structure
-    const passportData: PassportData = {
+    // Mock comprehensive extracted data
+    const extractedData: ExtractedData = {
       lastName: "RAIZADA",
       firstName: "SURYA PRATAP SINGH", 
       dob: "1998-09-03",
       cob: "GUWAHATI ASSAM",
-      address: "",
-      citizenship: "SUENA / SUMAME",
-      height: "",
-      weight: "",
-      sex: "FEMALE",
+      address: "123 Marine Drive, Mumbai",
+      citizenship: "INDIAN",
+      height: "175 cm",
+      weight: "70 kg",
+      sex: "MALE",
       hair: "BLACK",
       eyes: "BLACK",
-      fatherName: "",
-      motherName: "",
+      fatherName: "RAJESH RAIZADA",
+      motherName: "SUNITA RAIZADA",
       submitDate: "23/06/2025",
-      passport: "Q OR Q IE",
-      capacity: "Ordinary Seaman"
-    };
-
-    const certificateData: CertificateData = {
-      certificateNoStcw: "01134            0001",
-      certificateNoStsdsd: "01018            0001", 
-      certificateNoH2s: "01102            0001",
-      certificateNoBoset: "01106            0001",
-      certificateNoPalau1: "456",
-      certificateNoPalau2: "456"
+      passport: "Q1234567",
+      capacity: "Ordinary Seaman",
+      certificateNoStcw: "01134-0001",
+      certificateNoStsdsd: "01018-0001", 
+      certificateNoH2s: "01102-0001",
+      certificateNoBoset: "01106-0001",
+      certificateNoPalau1: "PLU-456",
+      certificateNoPalau2: "PLU-789"
     };
     
-    return { passportData, certificateData };
+    return extractedData;
   };
 
-  const handleProcessImages = async () => {
-    if (!frontImage || !backImage) {
+  const handleProcessDocuments = async () => {
+    if (uploadedImages.length === 0) {
       toast({
-        title: "Missing images",
-        description: "Please upload both front and back passport images.",
+        title: "No documents uploaded",
+        description: "Please upload at least one document to process.",
         variant: "destructive",
       });
       return;
@@ -143,18 +133,18 @@ const UploadPage = ({ onImagesUpload, onDataExtraction, frontImage, backImage }:
     setIsProcessing(true);
     
     try {
-      const { passportData, certificateData } = await processWithChatGPT(frontImage, backImage);
-      onDataExtraction(passportData, certificateData);
+      const extractedData = await processWithAI(uploadedImages);
+      onDataExtraction(extractedData);
       
       toast({
-        title: "Data extracted successfully",
-        description: "Passport and certificate information has been processed using AI.",
+        title: "✨ Data extracted successfully",
+        description: "AI has processed your documents and extracted all relevant information.",
       });
     } catch (error) {
       console.error("Processing error:", error);
       toast({
         title: "Processing failed",
-        description: "Failed to extract data from passport images.",
+        description: "Failed to extract data from documents. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -162,115 +152,144 @@ const UploadPage = ({ onImagesUpload, onDataExtraction, frontImage, backImage }:
     }
   };
 
-  const renderUploadCard = (
-    title: string, 
-    type: 'front' | 'back', 
-    image: string | null, 
-    isDragging: boolean,
-    inputRef: React.RefObject<HTMLInputElement>
-  ) => (
-    <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold text-gray-900">
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div
-          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer ${
-            isDragging
-              ? "border-blue-400 bg-blue-50"
-              : image
-              ? "border-green-400 bg-green-50"
-              : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-          }`}
-          onDragOver={(e) => handleDragOver(e, type)}
-          onDragLeave={(e) => handleDragLeave(e, type)}
-          onDrop={(e) => handleDrop(e, type)}
-          onClick={() => inputRef.current?.click()}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileInputChange(e, type)}
-            className="hidden"
-          />
-          
-          {image ? (
-            <div className="space-y-4">
-              <img src={image} alt={`Passport ${type}`} className="max-w-full max-h-40 mx-auto rounded-lg" />
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-green-600 rounded-full">
-                <ImageIcon className="w-6 h-6 text-white" />
-              </div>
-              <p className="text-green-600 font-medium">Image uploaded</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-400 rounded-full">
-                <Upload className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-gray-700 font-medium mb-2">Upload {title}</p>
-                <p className="text-sm text-gray-500">Drag and drop or click to browse</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
       {/* Header */}
       <div className="text-center mb-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-6">
-          <FileInput className="w-8 h-8 text-white" />
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-8 shadow-lg">
+          <Sparkles className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          AI-Powered Passport & Certificate Scanner
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+          AI-Powered Document Scanner
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Upload both sides of your passport and our AI will automatically extract all information including certificate data to fill your documents.
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          Upload any documents (passports, certificates, IDs) and our advanced AI will automatically extract all information for instant certificate generation.
         </p>
+        
+        {/* Features */}
+        <div className="grid md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto">
+          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-blue-100">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
+              <Upload className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">Multi-Document Upload</h3>
+            <p className="text-sm text-gray-600">Upload multiple document types in any format</p>
+          </div>
+          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-indigo-100">
+            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
+              <Zap className="w-6 h-6 text-indigo-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">AI OCR Processing</h3>
+            <p className="text-sm text-gray-600">Advanced AI extracts all relevant data automatically</p>
+          </div>
+          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-purple-100">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
+              <FileInput className="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">Instant Certificates</h3>
+            <p className="text-sm text-gray-600">Generate professional certificates in seconds</p>
+          </div>
+        </div>
       </div>
 
-      {/* Upload Cards */}
-      <div className="grid md:grid-cols-2 gap-8 mb-8">
-        {renderUploadCard(
-          "Passport Front Page", 
-          'front', 
-          frontImage, 
-          isDraggingFront, 
-          frontInputRef
-        )}
-        {renderUploadCard(
-          "Passport Back Page", 
-          'back', 
-          backImage, 
-          isDraggingBack, 
-          backInputRef
-        )}
-      </div>
-
-      {/* Process Button */}
-      {frontImage && backImage && (
-        <div className="text-center">
-          <Button
-            onClick={handleProcessImages}
-            disabled={isProcessing}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105"
+      {/* Upload Area */}
+      <Card className="shadow-2xl border-0 bg-white/70 backdrop-blur-sm mb-8 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <CardTitle className="text-2xl font-bold text-gray-900 text-center">
+            Upload Documents for Processing
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8">
+          <div
+            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer ${
+              isDragging
+                ? "border-blue-400 bg-blue-50 scale-105"
+                : uploadedImages.length > 0
+                ? "border-green-400 bg-green-50"
+                : "border-gray-300 hover:border-blue-400 hover:bg-blue-50 hover:scale-105"
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
           >
-            {isProcessing ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Processing with AI...</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              onChange={handleFileInputChange}
+              className="hidden"
+              multiple
+            />
+            
+            {uploadedImages.length > 0 ? (
+              <div className="space-y-6">
+                <div className="flex flex-wrap justify-center gap-4">
+                  {uploadedImages.slice(0, 3).map((image, index) => (
+                    <div key={index} className="relative">
+                      {image === 'pdf-document' ? (
+                        <div className="w-24 h-32 bg-red-100 rounded-lg flex items-center justify-center">
+                          <FileInput className="w-8 h-8 text-red-600" />
+                        </div>
+                      ) : (
+                        <img src={image} alt={`Document ${index + 1}`} className="w-24 h-32 object-cover rounded-lg shadow-md" />
+                      )}
+                    </div>
+                  ))}
+                  {uploadedImages.length > 3 && (
+                    <div className="w-24 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-600 font-medium">+{uploadedImages.length - 3}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full animate-pulse">
+                  <ImageIcon className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <p className="text-green-600 font-bold text-lg">{uploadedImages.length} document(s) uploaded</p>
+                  <p className="text-green-500 text-sm">Ready for AI processing</p>
+                </div>
               </div>
             ) : (
-              "Extract Data with ChatGPT"
+              <div className="space-y-6">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full">
+                  <Upload className="w-10 h-10 text-white" />
+                </div>
+                <div>
+                  <p className="text-gray-700 font-bold text-xl mb-3">Upload Your Documents</p>
+                  <p className="text-gray-500 mb-4">Drag and drop or click to browse</p>
+                  <p className="text-sm text-gray-400">Supports: JPEG, PNG, PDF • Multiple files allowed</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Process Button */}
+      {uploadedImages.length > 0 && (
+        <div className="text-center">
+          <Button
+            onClick={handleProcessDocuments}
+            disabled={isProcessing}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-12 py-4 text-xl font-bold rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110"
+          >
+            {isProcessing ? (
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>🤖 AI Processing Documents...</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <Sparkles className="w-6 h-6" />
+                <span>✨ Extract Data with AI</span>
+              </div>
             )}
           </Button>
+          
+          <p className="text-sm text-gray-500 mt-4">
+            Our AI will analyze your documents and extract all relevant information automatically
+          </p>
         </div>
       )}
     </div>

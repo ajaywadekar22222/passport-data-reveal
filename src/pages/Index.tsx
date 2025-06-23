@@ -7,7 +7,7 @@ import AdminPage from "../components/AdminPage";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 
-export interface PassportData {
+export interface ExtractedData {
   lastName: string;
   firstName: string;
   dob: string;
@@ -24,10 +24,6 @@ export interface PassportData {
   submitDate: string;
   passport: string;
   capacity: string;
-  [key: string]: any;
-}
-
-export interface CertificateData {
   certificateNoStcw: string;
   certificateNoStsdsd: string;
   certificateNoH2s: string;
@@ -43,6 +39,11 @@ export interface DocumentTemplate {
   type: string;
   fields: DocumentField[];
   imageUrl?: string;
+  companyInfo: {
+    name: string;
+    logo?: string;
+    signature?: string;
+  };
 }
 
 export interface DocumentField {
@@ -51,81 +52,70 @@ export interface DocumentField {
   label: string;
   type: 'text' | 'date' | 'number';
   required: boolean;
-  mappedTo?: keyof PassportData | keyof CertificateData;
-  position?: { x: number; y: number };
+  mappedTo?: keyof ExtractedData;
+  position?: { x: number; y: number; width?: number; height?: number };
 }
 
 type PageType = "upload" | "data" | "document-selection" | "document-fill" | "admin";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("upload");
-  const [extractedData, setExtractedData] = useState<PassportData | null>(null);
-  const [certificateData, setCertificateData] = useState<CertificateData | null>(null);
-  const [frontImage, setFrontImage] = useState<string | null>(null);
-  const [backImage, setBackImage] = useState<string | null>(null);
+  const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<DocumentTemplate | null>(null);
   const [documentTemplates, setDocumentTemplates] = useState<DocumentTemplate[]>([
     {
-      id: "seamans-certificate-1",
-      name: "Seaman's Certificate",
+      id: "stcw-certificate-1",
+      name: "STCW Basic Safety Certificate",
       type: "certificate",
+      companyInfo: {
+        name: "Angel Seafarers Documentation Pvt. Ltd.",
+        logo: "/company-logo.png"
+      },
       fields: [
-        { id: "cert-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
-        { id: "cert-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
-        { id: "cert-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
-        { id: "cert-cob", name: "countryOfBirth", label: "Country of Birth", type: "text", required: true, mappedTo: "cob" },
-        { id: "cert-capacity", name: "capacity", label: "Capacity", type: "text", required: true, mappedTo: "capacity" },
-        { id: "cert-stcw", name: "stcwCertificate", label: "STCW Certificate No", type: "text", required: true, mappedTo: "certificateNoStcw" },
+        { id: "cert-name", name: "candidateName", label: "Candidate Name", type: "text", required: true, mappedTo: "firstName", position: { x: 300, y: 200 } },
+        { id: "cert-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob", position: { x: 300, y: 250 } },
+        { id: "cert-passport", name: "passportNo", label: "Passport Number", type: "text", required: true, mappedTo: "passport", position: { x: 300, y: 300 } },
+        { id: "cert-nationality", name: "nationality", label: "Nationality", type: "text", required: true, mappedTo: "citizenship", position: { x: 300, y: 350 } },
+        { id: "cert-stcw", name: "stcwNumber", label: "STCW Certificate No", type: "text", required: true, mappedTo: "certificateNoStcw", position: { x: 300, y: 400 } },
       ]
     },
     {
-      id: "crew-id-card-1",
-      name: "Crew ID Card",
-      type: "id-card",
-      fields: [
-        { id: "id-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
-        { id: "id-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
-        { id: "id-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
-        { id: "id-sex", name: "sex", label: "Sex", type: "text", required: true, mappedTo: "sex" },
-        { id: "id-hair", name: "hairColor", label: "Hair Color", type: "text", required: false, mappedTo: "hair" },
-        { id: "id-eyes", name: "eyeColor", label: "Eye Color", type: "text", required: false, mappedTo: "eyes" },
-      ]
-    },
-    {
-      id: "training-certificate-1",
-      name: "Training Certificate",
+      id: "safety-certificate-1", 
+      name: "Safety Training Certificate",
       type: "training",
+      companyInfo: {
+        name: "Angel Seafarers Documentation Pvt. Ltd.",
+        logo: "/company-logo.png"
+      },
       fields: [
-        { id: "train-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
-        { id: "train-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
-        { id: "train-h2s", name: "h2sCertificate", label: "H2S Certificate", type: "text", required: false, mappedTo: "certificateNoH2s" },
-        { id: "train-boset", name: "bosetCertificate", label: "BOSET Certificate", type: "text", required: false, mappedTo: "certificateNoBoset" },
-        { id: "train-palau1", name: "palauCertificate1", label: "Palau Certificate 1", type: "text", required: false, mappedTo: "certificateNoPalau1" },
+        { id: "safety-name", name: "participantName", label: "Participant Name", type: "text", required: true, mappedTo: "firstName", position: { x: 250, y: 180 } },
+        { id: "safety-h2s", name: "h2sCertificate", label: "H2S Certificate", type: "text", required: false, mappedTo: "certificateNoH2s", position: { x: 250, y: 230 } },
+        { id: "safety-boset", name: "bosetCertificate", label: "BOSET Certificate", type: "text", required: false, mappedTo: "certificateNoBoset", position: { x: 250, y: 280 } },
       ]
     },
     {
-      id: "employment-record-1",
-      name: "Employment Record",
-      type: "employment",
+      id: "seaman-record-1",
+      name: "Seaman's Employment Record",
+      type: "employment", 
+      companyInfo: {
+        name: "Angel Seafarers Documentation Pvt. Ltd.",
+        logo: "/company-logo.png"
+      },
       fields: [
-        { id: "emp-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
-        { id: "emp-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
-        { id: "emp-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
-        { id: "emp-citizenship", name: "citizenship", label: "Citizenship", type: "text", required: true, mappedTo: "citizenship" },
-        { id: "emp-capacity", name: "capacity", label: "Capacity", type: "text", required: true, mappedTo: "capacity" },
-        { id: "emp-submitDate", name: "submitDate", label: "Submit Date", type: "date", required: false, mappedTo: "submitDate" },
+        { id: "emp-name", name: "seamanName", label: "Seaman Name", type: "text", required: true, mappedTo: "firstName", position: { x: 280, y: 160 } },
+        { id: "emp-capacity", name: "capacity", label: "Capacity/Rank", type: "text", required: true, mappedTo: "capacity", position: { x: 280, y: 210 } },
+        { id: "emp-citizenship", name: "citizenship", label: "Citizenship", type: "text", required: true, mappedTo: "citizenship", position: { x: 280, y: 260 } },
       ]
     }
   ]);
 
-  const handleImagesUpload = (front: string, back: string) => {
-    setFrontImage(front);
-    setBackImage(back);
+  const handleImagesUpload = (images: string[]) => {
+    setUploadedImages(images);
   };
 
-  const handleDataExtraction = (data: PassportData, certificates: CertificateData) => {
+  const handleDataExtraction = (data: ExtractedData) => {
     setExtractedData(data);
-    setCertificateData(certificates);
     setCurrentPage("data");
   };
 
@@ -141,9 +131,7 @@ const Index = () => {
   const handleBackToUpload = () => {
     setCurrentPage("upload");
     setExtractedData(null);
-    setCertificateData(null);
-    setFrontImage(null);
-    setBackImage(null);
+    setUploadedImages([]);
     setSelectedDocument(null);
   };
 
@@ -168,38 +156,47 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Admin Button - Fixed Position */}
-      {currentPage !== "admin" && (
-        <div className="fixed top-4 right-4 z-50">
-          <Button
-            onClick={handleGoToAdmin}
-            variant="outline"
-            className="bg-white/80 backdrop-blur-sm border-purple-300 text-purple-600 hover:bg-purple-50"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Admin
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Company Header */}
+      <div className="bg-white/80 backdrop-blur-sm border-b shadow-sm">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">A</span>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Angel Seafarers Documentation</h1>
+              <p className="text-xs text-gray-600">Automated Certificate Generation System</p>
+            </div>
+          </div>
+          
+          {currentPage !== "admin" && (
+            <Button
+              onClick={handleGoToAdmin}
+              variant="outline"
+              className="bg-white/80 backdrop-blur-sm border-purple-300 text-purple-600 hover:bg-purple-50"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Admin Panel
+            </Button>
+          )}
         </div>
-      )}
+      </div>
 
       {currentPage === "upload" && (
         <UploadPage 
           onImagesUpload={handleImagesUpload}
           onDataExtraction={handleDataExtraction}
-          frontImage={frontImage}
-          backImage={backImage}
+          uploadedImages={uploadedImages}
         />
       )}
       
       {currentPage === "data" && (
         <DataPage 
           data={extractedData}
-          certificateData={certificateData}
           onBackToUpload={handleBackToUpload}
           onConfirmData={handleDataConfirm}
-          frontImage={frontImage}
-          backImage={backImage}
+          uploadedImages={uploadedImages}
         />
       )}
       
@@ -214,7 +211,6 @@ const Index = () => {
       {currentPage === "document-fill" && (
         <DocumentFillPage 
           extractedData={extractedData}
-          certificateData={certificateData}
           selectedDocument={selectedDocument}
           onBackToDocuments={handleBackToDocuments}
         />

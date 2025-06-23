@@ -4,32 +4,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, FileText, Check } from "lucide-react";
-import { PassportData, CertificateData, DocumentTemplate } from "../pages/Index";
+import { ArrowLeft, Download, FileText, Check, Sparkles } from "lucide-react";
+import { ExtractedData, DocumentTemplate } from "../pages/Index";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentFillPageProps {
-  extractedData: PassportData | null;
-  certificateData: CertificateData | null;
+  extractedData: ExtractedData | null;
   selectedDocument: DocumentTemplate | null;
   onBackToDocuments: () => void;
 }
 
-const DocumentFillPage = ({ extractedData, certificateData, selectedDocument, onBackToDocuments }: DocumentFillPageProps) => {
+const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }: DocumentFillPageProps) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   if (!extractedData || !selectedDocument) return null;
 
-  // Initialize form data with mapped values from both passport and certificate data
+  // Initialize form data with mapped values
   const initializeFormData = () => {
     const initialData: Record<string, string> = {};
-    const allData = { ...extractedData, ...certificateData };
     
     selectedDocument.fields.forEach(field => {
-      if (field.mappedTo && allData[field.mappedTo]) {
-        initialData[field.name] = String(allData[field.mappedTo]);
+      if (field.mappedTo && extractedData[field.mappedTo]) {
+        initialData[field.name] = String(extractedData[field.mappedTo]);
       }
     });
     setFormData(initialData);
@@ -51,36 +49,42 @@ const DocumentFillPage = ({ extractedData, certificateData, selectedDocument, on
     setIsGenerating(true);
     
     // Simulate document generation process
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Create JSON structure for the filled document
+    // Create comprehensive document data
     const filledDocumentData = {
+      companyInfo: selectedDocument.companyInfo,
       templateInfo: {
         id: selectedDocument.id,
         name: selectedDocument.name,
         type: selectedDocument.type
       },
       filledData: formData,
-      sourceData: {
-        passportData: extractedData,
-        certificateData: certificateData
-      },
-      timestamp: new Date().toISOString()
+      sourceData: extractedData,
+      fieldPositions: selectedDocument.fields.reduce((acc, field) => {
+        if (field.position) {
+          acc[field.name] = field.position;
+        }
+        return acc;
+      }, {} as Record<string, any>),
+      generatedBy: "Angel Seafarers Documentation System",
+      timestamp: new Date().toISOString(),
+      certificateId: `ASF-${Date.now()}`
     };
     
-    console.log("Generated document data:", JSON.stringify(filledDocumentData, null, 2));
+    console.log("Generated certificate data:", JSON.stringify(filledDocumentData, null, 2));
     
     setIsGenerating(false);
     
     toast({
-      title: "Document generated successfully",
-      description: `Your ${selectedDocument.name} has been generated with auto-filled data.`,
+      title: "🎉 Certificate generated successfully!",
+      description: `Your ${selectedDocument.name} has been generated and is ready for download.`,
     });
     
-    // Mock download action - in real implementation, this would send to backend
+    // Download the generated certificate data
     const element = document.createElement('a');
     element.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filledDocumentData, null, 2));
-    element.download = `${selectedDocument.name.replace(/\s+/g, '_')}_filled.json`;
+    element.download = `${selectedDocument.name.replace(/\s+/g, '_')}_${filledDocumentData.certificateId}.json`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -91,67 +95,80 @@ const DocumentFillPage = ({ extractedData, certificateData, selectedDocument, on
   };
 
   const getSourceValue = (mappedTo: string | undefined) => {
-    if (!mappedTo) return null;
-    const allData = { ...extractedData, ...certificateData };
-    return String(allData[mappedTo] || '');
+    if (!mappedTo || !extractedData) return null;
+    return String(extractedData[mappedTo] || '');
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="container mx-auto px-4 py-12 max-w-5xl">
       {/* Header */}
       <div className="text-center mb-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-6">
-          <FileText className="w-8 h-8 text-white" />
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl mb-8 shadow-lg">
+          <Sparkles className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Auto-Fill Document
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-6">
+          Generate Certificate
         </h1>
-        <p className="text-xl text-gray-600">
-          Review and edit the auto-filled data for your {selectedDocument.name}
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          Review the auto-filled data and generate your professional {selectedDocument.name}
         </p>
       </div>
 
-      {/* Document Template Info */}
-      <Card className="mb-8 shadow-lg border-0 bg-blue-50/70 backdrop-blur-sm">
+      {/* Company Template Info */}
+      <Card className="mb-8 shadow-xl border-0 bg-gradient-to-r from-blue-50 to-indigo-50 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-blue-900 flex items-center">
-            <Check className="w-5 h-5 mr-2" />
-            Selected Template: {selectedDocument.name}
+          <CardTitle className="text-xl font-bold text-blue-900 flex items-center">
+            <Check className="w-6 h-6 mr-3 text-green-600" />
+            {selectedDocument.companyInfo.name}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-blue-700">
-            {selectedDocument.fields.length} fields will be auto-filled from your passport and certificate data
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-700 font-medium text-lg">{selectedDocument.name}</p>
+              <p className="text-blue-600">✨ {selectedDocument.fields.length} fields auto-filled from extracted data</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-blue-600">Certificate ID will be auto-generated</p>
+              <p className="text-xs text-blue-500">Professional template with company branding</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       {/* Form Fields */}
-      <Card className="mb-8 shadow-lg border-0 bg-white/70 backdrop-blur-sm">
+      <Card className="mb-8 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900">
-            Document Fields
+          <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
+            <FileText className="w-6 h-6 mr-3" />
+            Certificate Fields
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {selectedDocument.fields.map((field) => (
-              <div key={field.id} className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
+              <div key={field.id} className="space-y-3">
+                <Label className="text-sm font-bold text-gray-700 flex items-center">
                   {field.label}
-                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                  {field.required && <span className="text-red-500 ml-2 text-lg">*</span>}
+                  {field.position && (
+                    <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
+                      Pos: {field.position.x},{field.position.y}
+                    </span>
+                  )}
                 </Label>
                 <Input
                   type={field.type === 'date' ? 'date' : 'text'}
                   value={getFieldValue(field.name)}
                   onChange={(e) => handleInputChange(field.name, e.target.value)}
-                  className="w-full"
+                  className="w-full text-lg py-3 border-2 focus:ring-2 focus:ring-blue-500"
                   placeholder={`Enter ${field.label.toLowerCase()}`}
                   required={field.required}
                 />
                 {field.mappedTo && getSourceValue(field.mappedTo) && (
-                  <p className="text-xs text-green-600">
-                    ✓ Auto-filled from: {getSourceValue(field.mappedTo)}
+                  <p className="text-sm text-green-600 flex items-center">
+                    <Check className="w-4 h-4 mr-1" />
+                    Auto-filled: {getSourceValue(field.mappedTo)}
                   </p>
                 )}
               </div>
@@ -160,46 +177,51 @@ const DocumentFillPage = ({ extractedData, certificateData, selectedDocument, on
         </CardContent>
       </Card>
 
-      {/* Data Source Reference */}
-      <Card className="mb-8 shadow-lg border-0 bg-gray-50/70 backdrop-blur-sm">
+      {/* Source Data Summary */}
+      <Card className="mb-8 shadow-xl border-0 bg-gray-50/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900">
-            Source Data Summary
+          <CardTitle className="text-lg font-bold text-gray-900">
+            📋 Extracted Source Data Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">Passport Data:</h4>
-              <div className="space-y-1 text-sm">
+              <h4 className="font-bold text-gray-800 mb-3 text-lg">👤 Personal Information</h4>
+              <div className="space-y-2 text-sm">
                 <div><strong>Name:</strong> {extractedData.firstName} {extractedData.lastName}</div>
                 <div><strong>DOB:</strong> {extractedData.dob}</div>
                 <div><strong>Citizenship:</strong> {extractedData.citizenship}</div>
                 <div><strong>Capacity:</strong> {extractedData.capacity}</div>
               </div>
             </div>
-            {certificateData && (
-              <div>
-                <h4 className="font-medium text-gray-800 mb-2">Certificate Data:</h4>
-                <div className="space-y-1 text-sm">
-                  <div><strong>STCW:</strong> {certificateData.certificateNoStcw}</div>
-                  <div><strong>H2S:</strong> {certificateData.certificateNoH2s}</div>
-                  <div><strong>BOSET:</strong> {certificateData.certificateNoBoset}</div>
-                  <div><strong>Palau 1:</strong> {certificateData.certificateNoPalau1}</div>
-                </div>
+            <div>
+              <h4 className="font-bold text-gray-800 mb-3 text-lg">📄 Document Details</h4>
+              <div className="space-y-2 text-sm">
+                <div><strong>Passport:</strong> {extractedData.passport}</div>
+                <div><strong>Country of Birth:</strong> {extractedData.cob}</div>
+                <div><strong>Submit Date:</strong> {extractedData.submitDate}</div>
               </div>
-            )}
+            </div>
+            <div>
+              <h4 className="font-bold text-gray-800 mb-3 text-lg">🏆 Certificates</h4>
+              <div className="space-y-2 text-sm">
+                <div><strong>STCW:</strong> {extractedData.certificateNoStcw}</div>
+                <div><strong>H2S:</strong> {extractedData.certificateNoH2s}</div>
+                <div><strong>BOSET:</strong> {extractedData.certificateNoBoset}</div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Action Buttons */}
-      <div className="text-center space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <div className="text-center space-y-6">
+        <div className="flex flex-col sm:flex-row gap-6 justify-center">
           <Button
             onClick={onBackToDocuments}
             variant="outline"
-            className="border-gray-400 text-gray-600 hover:bg-gray-50 px-8 py-3 text-lg font-semibold rounded-lg transition-all duration-300"
+            className="border-2 border-gray-400 text-gray-600 hover:bg-gray-50 px-8 py-3 text-lg font-bold rounded-xl transition-all duration-300"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Templates
@@ -208,24 +230,24 @@ const DocumentFillPage = ({ extractedData, certificateData, selectedDocument, on
           <Button 
             onClick={handleGenerateDocument}
             disabled={isGenerating}
-            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105"
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-12 py-3 text-lg font-bold rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-110"
           >
             {isGenerating ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Generating...</span>
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>🎨 Generating Certificate...</span>
               </div>
             ) : (
-              <>
-                <Download className="w-5 h-5 mr-2" />
-                Generate Document
-              </>
+              <div className="flex items-center space-x-3">
+                <Download className="w-6 h-6" />
+                <span>🎉 Generate Certificate</span>
+              </div>
             )}
           </Button>
         </div>
         
-        <p className="text-sm text-gray-500">
-          The generated document will include all the auto-filled passport and certificate data in JSON format
+        <p className="text-sm text-gray-500 max-w-2xl mx-auto">
+          The generated certificate will include the company logo, official signatures, and all auto-filled data positioned correctly on the professional template.
         </p>
       </div>
     </div>
