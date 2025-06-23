@@ -10,50 +10,57 @@ interface DocumentSelectionPageProps {
 }
 
 const DocumentSelectionPage = ({ onDocumentSelect, onBackToData }: DocumentSelectionPageProps) => {
-  // Mock document templates that would be uploaded by admin
+  // Mock document templates with updated field mappings for your JSON structure
   const documentTemplates: DocumentTemplate[] = [
     {
-      id: "certificate-1",
-      name: "Employment Certificate",
+      id: "seamans-certificate-1",
+      name: "Seaman's Certificate",
       type: "certificate",
       fields: [
-        { id: "emp-name", name: "employeeName", label: "Employee Name", type: "text", required: true, mappedTo: "name" },
-        { id: "emp-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dateOfBirth" },
-        { id: "emp-nationality", name: "nationality", label: "Nationality", type: "text", required: true, mappedTo: "nationality" },
-        { id: "emp-passport", name: "passportNumber", label: "Passport Number", type: "text", required: true, mappedTo: "passportNumber" },
+        { id: "cert-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
+        { id: "cert-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
+        { id: "cert-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
+        { id: "cert-cob", name: "countryOfBirth", label: "Country of Birth", type: "text", required: true, mappedTo: "cob" },
+        { id: "cert-capacity", name: "capacity", label: "Capacity", type: "text", required: true, mappedTo: "capacity" },
+        { id: "cert-stcw", name: "stcwCertificate", label: "STCW Certificate No", type: "text", required: true, mappedTo: "certificateNoStcw" },
       ]
     },
     {
-      id: "id-card-1",
-      name: "Company ID Card",
+      id: "crew-id-card-1",
+      name: "Crew ID Card",
       type: "id-card",
       fields: [
-        { id: "id-name", name: "fullName", label: "Full Name", type: "text", required: true, mappedTo: "name" },
-        { id: "id-dob", name: "birthDate", label: "Birth Date", type: "date", required: true, mappedTo: "dateOfBirth" },
-        { id: "id-nationality", name: "nationality", label: "Nationality", type: "text", required: true, mappedTo: "nationality" },
+        { id: "id-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
+        { id: "id-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
+        { id: "id-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
+        { id: "id-sex", name: "sex", label: "Sex", type: "text", required: true, mappedTo: "sex" },
+        { id: "id-hair", name: "hairColor", label: "Hair Color", type: "text", required: false, mappedTo: "hair" },
+        { id: "id-eyes", name: "eyeColor", label: "Eye Color", type: "text", required: false, mappedTo: "eyes" },
       ]
     },
     {
-      id: "visa-app-1",
-      name: "Visa Application Form",
-      type: "visa-application",
+      id: "training-certificate-1",
+      name: "Training Certificate",
+      type: "training",
       fields: [
-        { id: "visa-name", name: "applicantName", label: "Applicant Name", type: "text", required: true, mappedTo: "name" },
-        { id: "visa-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dateOfBirth" },
-        { id: "visa-nationality", name: "nationality", label: "Nationality", type: "text", required: true, mappedTo: "nationality" },
-        { id: "visa-passport", name: "passportNumber", label: "Passport Number", type: "text", required: true, mappedTo: "passportNumber" },
-        { id: "visa-expiry", name: "passportExpiry", label: "Passport Expiry", type: "date", required: true, mappedTo: "expiryDate" },
-        { id: "visa-pob", name: "placeOfBirth", label: "Place of Birth", type: "text", required: false, mappedTo: "placeOfBirth" },
+        { id: "train-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
+        { id: "train-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
+        { id: "train-h2s", name: "h2sCertificate", label: "H2S Certificate", type: "text", required: false, mappedTo: "certificateNoH2s" },
+        { id: "train-boset", name: "bosetCertificate", label: "BOSET Certificate", type: "text", required: false, mappedTo: "certificateNoBoset" },
+        { id: "train-palau1", name: "palauCertificate1", label: "Palau Certificate 1", type: "text", required: false, mappedTo: "certificateNoPalau1" },
       ]
     },
     {
-      id: "membership-1",
-      name: "Membership Registration",
-      type: "membership",
+      id: "employment-record-1",
+      name: "Employment Record",
+      type: "employment",
       fields: [
-        { id: "member-name", name: "memberName", label: "Member Name", type: "text", required: true, mappedTo: "name" },
-        { id: "member-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dateOfBirth" },
-        { id: "member-nationality", name: "nationality", label: "Nationality", type: "text", required: true, mappedTo: "nationality" },
+        { id: "emp-lastName", name: "lastName", label: "Last Name", type: "text", required: true, mappedTo: "lastName" },
+        { id: "emp-firstName", name: "firstName", label: "First Name", type: "text", required: true, mappedTo: "firstName" },
+        { id: "emp-dob", name: "dateOfBirth", label: "Date of Birth", type: "date", required: true, mappedTo: "dob" },
+        { id: "emp-citizenship", name: "citizenship", label: "Citizenship", type: "text", required: true, mappedTo: "citizenship" },
+        { id: "emp-capacity", name: "capacity", label: "Capacity", type: "text", required: true, mappedTo: "capacity" },
+        { id: "emp-submitDate", name: "submitDate", label: "Submit Date", type: "date", required: false, mappedTo: "submitDate" },
       ]
     }
   ];
@@ -62,8 +69,8 @@ const DocumentSelectionPage = ({ onDocumentSelect, onBackToData }: DocumentSelec
     switch (type) {
       case "certificate": return Award;
       case "id-card": return CreditCard;
-      case "visa-application": return FileCheck;
-      case "membership": return FileText;
+      case "training": return FileCheck;
+      case "employment": return FileText;
       default: return FileText;
     }
   };
@@ -79,7 +86,7 @@ const DocumentSelectionPage = ({ onDocumentSelect, onBackToData }: DocumentSelec
           Select Document Template
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Choose the document template where you want to auto-fill the extracted passport data
+          Choose the document template where you want to auto-fill the extracted passport and certificate data
         </p>
       </div>
 

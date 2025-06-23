@@ -1,14 +1,13 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Image as ImageIcon, FileInput } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { PassportData } from "../pages/Index";
+import { PassportData, CertificateData } from "../pages/Index";
 
 interface UploadPageProps {
   onImagesUpload: (front: string, back: string) => void;
-  onDataExtraction: (data: PassportData) => void;
+  onDataExtraction: (data: PassportData, certificates: CertificateData) => void;
   frontImage: string | null;
   backImage: string | null;
 }
@@ -81,25 +80,54 @@ const UploadPage = ({ onImagesUpload, onDataExtraction, frontImage, backImage }:
 
   const processWithChatGPT = async (frontImageData: string, backImageData: string) => {
     // This would normally call ChatGPT API with vision capabilities
-    // For now, we'll simulate the response
+    // For now, we'll simulate the response with your JSON structure
     
-    const prompt = `Extract passport data from these images in JSON format. Include: name, dateOfBirth, nationality, passportNumber, expiryDate, issuingCountry, placeOfBirth, gender, personalNumber`;
+    const prompt = `Extract passport and certificate data from these images in JSON format. 
+    Return two objects: passportData and certificateData with the following structure:
+    
+    passportData: {
+      lastName, firstName, dob, cob, address, citizenship, height, weight, sex, hair, eyes, fatherName, motherName, submitDate, passport, capacity
+    }
+    
+    certificateData: {
+      certificateNoStcw, certificateNoStsdsd, certificateNoH2s, certificateNoBoset, certificateNoPalau1, certificateNoPalau2
+    }`;
+    
+    console.log("Processing images with prompt:", prompt);
     
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Mock extracted data from ChatGPT
-    return {
-      name: "JOHN MICHAEL SMITH",
-      dateOfBirth: "15 MAR 1985",
-      nationality: "AMERICAN",
-      passportNumber: "123456789",
-      expiryDate: "14 MAR 2030",
-      issuingCountry: "UNITED STATES OF AMERICA",
-      placeOfBirth: "NEW YORK, NY",
-      gender: "M",
-      personalNumber: "987654321"
+    // Mock extracted data matching your JSON structure
+    const passportData: PassportData = {
+      lastName: "RAIZADA",
+      firstName: "SURYA PRATAP SINGH", 
+      dob: "1998-09-03",
+      cob: "GUWAHATI ASSAM",
+      address: "",
+      citizenship: "SUENA / SUMAME",
+      height: "",
+      weight: "",
+      sex: "FEMALE",
+      hair: "BLACK",
+      eyes: "BLACK",
+      fatherName: "",
+      motherName: "",
+      submitDate: "23/06/2025",
+      passport: "Q OR Q IE",
+      capacity: "Ordinary Seaman"
     };
+
+    const certificateData: CertificateData = {
+      certificateNoStcw: "01134            0001",
+      certificateNoStsdsd: "01018            0001", 
+      certificateNoH2s: "01102            0001",
+      certificateNoBoset: "01106            0001",
+      certificateNoPalau1: "456",
+      certificateNoPalau2: "456"
+    };
+    
+    return { passportData, certificateData };
   };
 
   const handleProcessImages = async () => {
@@ -115,14 +143,15 @@ const UploadPage = ({ onImagesUpload, onDataExtraction, frontImage, backImage }:
     setIsProcessing(true);
     
     try {
-      const extractedData = await processWithChatGPT(frontImage, backImage);
-      onDataExtraction(extractedData);
+      const { passportData, certificateData } = await processWithChatGPT(frontImage, backImage);
+      onDataExtraction(passportData, certificateData);
       
       toast({
         title: "Data extracted successfully",
-        description: "Passport information has been processed using AI.",
+        description: "Passport and certificate information has been processed using AI.",
       });
     } catch (error) {
+      console.error("Processing error:", error);
       toast({
         title: "Processing failed",
         description: "Failed to extract data from passport images.",
@@ -200,10 +229,10 @@ const UploadPage = ({ onImagesUpload, onDataExtraction, frontImage, backImage }:
           <FileInput className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          AI-Powered Passport Scanner
+          AI-Powered Passport & Certificate Scanner
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Upload both sides of your passport and our AI will automatically extract all information to fill your documents.
+          Upload both sides of your passport and our AI will automatically extract all information including certificate data to fill your documents.
         </p>
       </div>
 

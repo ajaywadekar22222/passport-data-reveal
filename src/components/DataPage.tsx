@@ -2,30 +2,42 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, FileInput } from "lucide-react";
-import { PassportData } from "../pages/Index";
+import { PassportData, CertificateData } from "../pages/Index";
 
 interface DataPageProps {
   data: PassportData | null;
+  certificateData: CertificateData | null;
   onBackToUpload: () => void;
   onConfirmData: () => void;
   frontImage: string | null;
   backImage: string | null;
 }
 
-const DataPage = ({ data, onBackToUpload, onConfirmData, frontImage, backImage }: DataPageProps) => {
+const DataPage = ({ data, certificateData, onBackToUpload, onConfirmData, frontImage, backImage }: DataPageProps) => {
   if (!data) return null;
 
-  const dataFields = [
-    { label: "Full Name", value: data.name, key: "name" },
-    { label: "Date of Birth", value: data.dateOfBirth, key: "dob" },
-    { label: "Nationality", value: data.nationality, key: "nationality" },
-    { label: "Passport Number", value: data.passportNumber, key: "passport" },
-    { label: "Expiry Date", value: data.expiryDate, key: "expiry" },
-    { label: "Issuing Country", value: data.issuingCountry, key: "country" },
-    { label: "Place of Birth", value: data.placeOfBirth, key: "pob" },
-    { label: "Gender", value: data.gender, key: "gender" },
-    { label: "Personal Number", value: data.personalNumber, key: "personalNum" },
+  const passportFields = [
+    { label: "Last Name", value: data.lastName, key: "lastName" },
+    { label: "First Name", value: data.firstName, key: "firstName" },
+    { label: "Date of Birth", value: data.dob, key: "dob" },
+    { label: "Country of Birth", value: data.cob, key: "cob" },
+    { label: "Citizenship", value: data.citizenship, key: "citizenship" },
+    { label: "Sex", value: data.sex, key: "sex" },
+    { label: "Hair Color", value: data.hair, key: "hair" },
+    { label: "Eye Color", value: data.eyes, key: "eyes" },
+    { label: "Submit Date", value: data.submitDate, key: "submitDate" },
+    { label: "Passport Number", value: data.passport, key: "passport" },
+    { label: "Capacity", value: data.capacity, key: "capacity" },
   ].filter(field => field.value);
+
+  const certificateFields = certificateData ? [
+    { label: "STCW Certificate", value: certificateData.certificateNoStcw, key: "stcw" },
+    { label: "STSDSD Certificate", value: certificateData.certificateNoStsdsd, key: "stsdsd" },
+    { label: "H2S Certificate", value: certificateData.certificateNoH2s, key: "h2s" },
+    { label: "BOSET Certificate", value: certificateData.certificateNoBoset, key: "boset" },
+    { label: "Palau Certificate 1", value: certificateData.certificateNoPalau1, key: "palau1" },
+    { label: "Palau Certificate 2", value: certificateData.certificateNoPalau2, key: "palau2" },
+  ].filter(field => field.value) : [];
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -35,14 +47,14 @@ const DataPage = ({ data, onBackToUpload, onConfirmData, frontImage, backImage }
           <FileInput className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Extracted Passport Data
+          Extracted Data Review
         </h1>
         <p className="text-xl text-gray-600">
-          Review the information extracted from your passport images
+          Review the passport and certificate information extracted from your images
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8">
         {/* Images Preview */}
         <div className="space-y-6">
           {frontImage && (
@@ -80,26 +92,49 @@ const DataPage = ({ data, onBackToUpload, onConfirmData, frontImage, backImage }
           )}
         </div>
 
-        {/* Extracted Data */}
+        {/* Passport Data */}
         <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-gray-900">
-              Extracted Information
+              Passport Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {dataFields.map((field) => (
-              <div key={field.key} className="space-y-2">
-                <label className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+          <CardContent className="space-y-4">
+            {passportFields.map((field) => (
+              <div key={field.key} className="space-y-1">
+                <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                   {field.label}
                 </label>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <span className="text-gray-900 font-medium">{field.value}</span>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
+                  <span className="text-gray-900 text-sm">{field.value}</span>
                 </div>
               </div>
             ))}
           </CardContent>
         </Card>
+
+        {/* Certificate Data */}
+        {certificateFields.length > 0 && (
+          <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Certificate Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {certificateFields.map((field) => (
+                <div key={field.key} className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    {field.label}
+                  </label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
+                    <span className="text-gray-900 text-sm">{field.value}</span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Action Buttons */}

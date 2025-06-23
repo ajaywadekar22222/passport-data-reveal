@@ -5,28 +5,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Download, FileText, Check } from "lucide-react";
-import { PassportData, DocumentTemplate } from "../pages/Index";
+import { PassportData, CertificateData, DocumentTemplate } from "../pages/Index";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentFillPageProps {
   extractedData: PassportData | null;
+  certificateData: CertificateData | null;
   selectedDocument: DocumentTemplate | null;
   onBackToDocuments: () => void;
 }
 
-const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }: DocumentFillPageProps) => {
+const DocumentFillPage = ({ extractedData, certificateData, selectedDocument, onBackToDocuments }: DocumentFillPageProps) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   if (!extractedData || !selectedDocument) return null;
 
-  // Initialize form data with mapped values
+  // Initialize form data with mapped values from both passport and certificate data
   const initializeFormData = () => {
     const initialData: Record<string, string> = {};
+    const allData = { ...extractedData, ...certificateData };
+    
     selectedDocument.fields.forEach(field => {
-      if (field.mappedTo && extractedData[field.mappedTo]) {
-        initialData[field.name] = extractedData[field.mappedTo] as string;
+      if (field.mappedTo && allData[field.mappedTo]) {
+        initialData[field.name] = allData[field.mappedTo] as string;
       }
     });
     setFormData(initialData);
@@ -50,10 +53,22 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
     // Simulate document generation process
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Here you would typically:
-    // 1. Send the form data to your backend
-    // 2. Generate the document with filled data
-    // 3. Return a download link or PDF blob
+    // Create JSON structure for the filled document
+    const filledDocumentData = {
+      templateInfo: {
+        id: selectedDocument.id,
+        name: selectedDocument.name,
+        type: selectedDocument.type
+      },
+      filledData: formData,
+      sourceData: {
+        passportData: extractedData,
+        certificateData: certificateData
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log("Generated document data:", JSON.stringify(filledDocumentData, null, 2));
     
     setIsGenerating(false);
     
@@ -62,10 +77,10 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
       description: `Your ${selectedDocument.name} has been generated with auto-filled data.`,
     });
     
-    // Mock download action
+    // Mock download action - in real implementation, this would send to backend
     const element = document.createElement('a');
-    element.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(`Generated ${selectedDocument.name} with data: ${JSON.stringify(formData, null, 2)}`);
-    element.download = `${selectedDocument.name.replace(/\s+/g, '_')}.txt`;
+    element.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filledDocumentData, null, 2));
+    element.download = `${selectedDocument.name.replace(/\s+/g, '_')}_filled.json`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -73,6 +88,12 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
 
   const getFieldValue = (fieldName: string) => {
     return formData[fieldName] || '';
+  };
+
+  const getSourceValue = (mappedTo: string | undefined) => {
+    if (!mappedTo) return null;
+    const allData = { ...extractedData, ...certificateData };
+    return allData[mappedTo];
   };
 
   return (
@@ -100,7 +121,7 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
         </CardHeader>
         <CardContent>
           <p className="text-blue-700">
-            {selectedDocument.fields.length} fields will be auto-filled from your passport data
+            {selectedDocument.fields.length} fields will be auto-filled from your passport and certificate data
           </p>
         </CardContent>
       </Card>
@@ -128,9 +149,9 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
                   placeholder={`Enter ${field.label.toLowerCase()}`}
                   required={field.required}
                 />
-                {field.mappedTo && (
+                {field.mappedTo && getSourceValue(field.mappedTo) && (
                   <p className="text-xs text-green-600">
-                    ✓ Auto-filled from passport data
+                    ✓ Auto-filled from: {getSourceValue(field.mappedTo)}
                   </p>
                 )}
               </div>
@@ -143,17 +164,31 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
       <Card className="mb-8 shadow-lg border-0 bg-gray-50/70 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900">
-            Source Data (From Passport)
+            Source Data Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 gap-4 text-sm">
-            <div><strong>Name:</strong> {extractedData.name}</div>
-            <div><strong>DOB:</strong> {extractedData.dateOfBirth}</div>
-            <div><strong>Nationality:</strong> {extractedData.nationality}</div>
-            <div><strong>Passport #:</strong> {extractedData.passportNumber}</div>
-            <div><strong>Expiry:</strong> {extractedData.expiryDate}</div>
-            <div><strong>Country:</strong> {extractedData.issuingCountry}</div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-medium text-gray-800 mb-2">Passport Data:</h4>
+              <div className="space-y-1 text-sm">
+                <div><strong>Name:</strong> {extractedData.firstName} {extractedData.lastName}</div>
+                <div><strong>DOB:</strong> {extractedData.dob}</div>
+                <div><strong>Citizenship:</strong> {extractedData.citizenship}</div>
+                <div><strong>Capacity:</strong> {extractedData.capacity}</div>
+              </div>
+            </div>
+            {certificateData && (
+              <div>
+                <h4 className="font-medium text-gray-800 mb-2">Certificate Data:</h4>
+                <div className="space-y-1 text-sm">
+                  <div><strong>STCW:</strong> {certificateData.certificateNoStcw}</div>
+                  <div><strong>H2S:</strong> {certificateData.certificateNoH2s}</div>
+                  <div><strong>BOSET:</strong> {certificateData.certificateNoBoset}</div>
+                  <div><strong>Palau 1:</strong> {certificateData.certificateNoPalau1}</div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -190,7 +225,7 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
         </div>
         
         <p className="text-sm text-gray-500">
-          The generated document will include all the auto-filled passport data
+          The generated document will include all the auto-filled passport and certificate data in JSON format
         </p>
       </div>
     </div>

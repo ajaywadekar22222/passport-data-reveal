@@ -6,15 +6,32 @@ import DocumentSelectionPage from "../components/DocumentSelectionPage";
 import DocumentFillPage from "../components/DocumentFillPage";
 
 export interface PassportData {
-  name: string;
-  dateOfBirth: string;
-  nationality: string;
-  passportNumber: string;
-  expiryDate: string;
-  issuingCountry: string;
-  placeOfBirth?: string;
-  gender?: string;
-  personalNumber?: string;
+  lastName: string;
+  firstName: string;
+  dob: string;
+  cob: string;
+  address: string;
+  citizenship: string;
+  height: string;
+  weight: string;
+  sex: string;
+  hair: string;
+  eyes: string;
+  fatherName: string;
+  motherName: string;
+  submitDate: string;
+  passport: string;
+  capacity: string;
+  [key: string]: any;
+}
+
+export interface CertificateData {
+  certificateNoStcw: string;
+  certificateNoStsdsd: string;
+  certificateNoH2s: string;
+  certificateNoBoset: string;
+  certificateNoPalau1: string;
+  certificateNoPalau2: string;
   [key: string]: any;
 }
 
@@ -32,7 +49,7 @@ export interface DocumentField {
   label: string;
   type: 'text' | 'date' | 'number';
   required: boolean;
-  mappedTo?: keyof PassportData;
+  mappedTo?: keyof PassportData | keyof CertificateData;
   position?: { x: number; y: number };
 }
 
@@ -41,6 +58,7 @@ type PageType = "upload" | "data" | "document-selection" | "document-fill";
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("upload");
   const [extractedData, setExtractedData] = useState<PassportData | null>(null);
+  const [certificateData, setCertificateData] = useState<CertificateData | null>(null);
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<DocumentTemplate | null>(null);
@@ -50,8 +68,9 @@ const Index = () => {
     setBackImage(back);
   };
 
-  const handleDataExtraction = (data: PassportData) => {
+  const handleDataExtraction = (data: PassportData, certificates: CertificateData) => {
     setExtractedData(data);
+    setCertificateData(certificates);
     setCurrentPage("data");
   };
 
@@ -67,6 +86,7 @@ const Index = () => {
   const handleBackToUpload = () => {
     setCurrentPage("upload");
     setExtractedData(null);
+    setCertificateData(null);
     setFrontImage(null);
     setBackImage(null);
     setSelectedDocument(null);
@@ -94,6 +114,7 @@ const Index = () => {
       {currentPage === "data" && (
         <DataPage 
           data={extractedData}
+          certificateData={certificateData}
           onBackToUpload={handleBackToUpload}
           onConfirmData={handleDataConfirm}
           frontImage={frontImage}
@@ -111,6 +132,7 @@ const Index = () => {
       {currentPage === "document-fill" && (
         <DocumentFillPage 
           extractedData={extractedData}
+          certificateData={certificateData}
           selectedDocument={selectedDocument}
           onBackToDocuments={handleBackToDocuments}
         />
