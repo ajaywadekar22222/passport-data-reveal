@@ -1,5 +1,5 @@
 
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { ExtractedData, DocumentTemplate } from '../pages/Index';
 
@@ -59,20 +59,25 @@ export const downloadCertificate = async (
   certificateData: CertificateData,
   previewElement: HTMLElement
 ) => {
-  const pdfBlob = await generateCertificatePDF(certificateData, previewElement);
-  
-  const userName = certificateData.userData.candidateName || 
-                   certificateData.extractedData.firstName || 
-                   'Certificate';
-  
-  const fileName = `${userName.replace(/\s+/g, '_')}_${certificateData.templateInfo.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
-  
-  const url = URL.createObjectURL(pdfBlob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  try {
+    const pdfBlob = await generateCertificatePDF(certificateData, previewElement);
+    
+    const userName = certificateData.userData.candidateName || 
+                     certificateData.extractedData.firstName || 
+                     'Certificate';
+    
+    const fileName = `${userName.replace(/\s+/g, '_')}_${certificateData.templateInfo.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+    
+    const url = URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Download error:', error);
+    throw error;
+  }
 };

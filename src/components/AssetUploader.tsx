@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Image as ImageIcon, FileSignature, Award, Building } from 'lucide-react';
+import { Upload, FileSignature, Award, Building } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import BackgroundRemover from './BackgroundRemover';
 
@@ -29,9 +29,17 @@ const AssetUploader = ({ onAssetsUpload, currentAssets }: AssetUploaderProps) =>
     if (!files) return;
 
     const filePromises = Array.from(files).map(file => {
-      return new Promise<string>((resolve) => {
+      return new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onload = (e) => {
+          const result = e.target?.result;
+          if (typeof result === 'string') {
+            resolve(result);
+          } else {
+            reject(new Error('Failed to read file'));
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(file);
       });
     });
@@ -47,6 +55,13 @@ const AssetUploader = ({ onAssetsUpload, currentAssets }: AssetUploaderProps) =>
       toast({
         title: "Assets uploaded successfully",
         description: `${results.length} ${type} uploaded`,
+      });
+    }).catch(error => {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Could not upload files. Please try again.",
+        variant: "destructive",
       });
     });
   };
@@ -88,7 +103,7 @@ const AssetUploader = ({ onAssetsUpload, currentAssets }: AssetUploaderProps) =>
   }: { 
     title: string; 
     type: 'signatures' | 'stamps' | 'logos'; 
-    icon: any; 
+    icon: React.ComponentType<{ className?: string }>; 
     inputRef: React.RefObject<HTMLInputElement> 
   }) => (
     <Card className="mb-4">
