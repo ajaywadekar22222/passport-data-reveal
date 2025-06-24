@@ -1,11 +1,13 @@
 import { useState } from "react";
+import LoginPage from "./LoginPage";
 import UploadPage from "../components/UploadPage";
 import DataPage from "../components/DataPage";
 import DocumentSelectionPage from "../components/DocumentSelectionPage";
 import DocumentFillPage from "../components/DocumentFillPage";
 import AdminPage from "../components/AdminPage";
+import AdminPasswordChange from "../components/AdminPasswordChange";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, LogOut, Key } from "lucide-react";
 
 export interface ExtractedData {
   lastName: string;
@@ -57,11 +59,16 @@ export interface DocumentField {
 }
 
 type PageType = "upload" | "data" | "document-selection" | "document-fill" | "admin";
+type UserType = 'admin' | 'user' | null;
 
 const Index = () => {
+  const [currentUser, setCurrentUser] = useState<UserType>(null);
+  const [adminPassword, setAdminPassword] = useState('1234');
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageType>("upload");
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [additionalImages, setAdditionalImages] = useState<string[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<DocumentTemplate | null>(null);
   const [documentTemplates, setDocumentTemplates] = useState<DocumentTemplate[]>([
     {
@@ -155,6 +162,31 @@ const Index = () => {
     setCurrentPage("upload");
   };
 
+  const handleLogin = (userType: UserType) => {
+    setCurrentUser(userType);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setCurrentPage("upload");
+    setExtractedData(null);
+    setUploadedImages([]);
+    setAdditionalImages([]);
+    setSelectedDocument(null);
+  };
+
+  const handlePasswordChange = (newPassword: string) => {
+    setAdminPassword(newPassword);
+  };
+
+  const handleAdditionalImagesUpload = (images: string[]) => {
+    setAdditionalImages(images);
+  };
+
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Company Header */}
@@ -170,18 +202,51 @@ const Index = () => {
             </div>
           </div>
           
-          {currentPage !== "admin" && (
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600 px-3 py-1 bg-blue-100 rounded-full">
+              {currentUser === 'admin' ? '👑 Admin' : '👤 Team Member'}
+            </span>
+            
+            {currentUser === 'admin' && currentPage !== "admin" && (
+              <Button
+                onClick={handleGoToAdmin}
+                variant="outline"
+                className="bg-white/80 backdrop-blur-sm border-purple-300 text-purple-600 hover:bg-purple-50"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Admin Panel
+              </Button>
+            )}
+            
+            {currentUser === 'admin' && (
+              <Button
+                onClick={() => setShowPasswordChange(true)}
+                variant="outline"
+                size="sm"
+              >
+                <Key className="w-4 h-4" />
+              </Button>
+            )}
+            
             <Button
-              onClick={handleGoToAdmin}
+              onClick={handleLogout}
               variant="outline"
-              className="bg-white/80 backdrop-blur-sm border-purple-300 text-purple-600 hover:bg-purple-50"
+              className="border-red-300 text-red-600 hover:bg-red-50"
             >
-              <Settings className="w-4 h-4 mr-2" />
-              Admin Panel
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
             </Button>
-          )}
+          </div>
         </div>
       </div>
+
+      {/* Password Change Modal */}
+      {showPasswordChange && (
+        <AdminPasswordChange
+          onClose={() => setShowPasswordChange(false)}
+          onPasswordChange={handlePasswordChange}
+        />
+      )}
 
       {currentPage === "upload" && (
         <UploadPage 
