@@ -1,11 +1,13 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, FileText, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, FileText, Check, Sparkles, ArrowRight } from "lucide-react";
 import { ExtractedData, DocumentTemplate } from "../pages/Index";
 import { useToast } from "@/hooks/use-toast";
+import CertificatePreview from "./CertificatePreview";
 
 interface DocumentFillPageProps {
   extractedData: ExtractedData | null;
@@ -15,7 +17,7 @@ interface DocumentFillPageProps {
 
 const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }: DocumentFillPageProps) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
 
   if (!extractedData || !selectedDocument) return null;
@@ -44,49 +46,22 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
     }));
   };
 
-  const handleGenerateDocument = async () => {
-    setIsGenerating(true);
-    
-    // Simulate document generation process
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Create comprehensive document data
-    const filledDocumentData = {
-      companyInfo: selectedDocument.companyInfo,
-      templateInfo: {
-        id: selectedDocument.id,
-        name: selectedDocument.name,
-        type: selectedDocument.type
-      },
-      filledData: formData,
-      sourceData: extractedData,
-      fieldPositions: selectedDocument.fields.reduce((acc, field) => {
-        if (field.position) {
-          acc[field.name] = field.position;
-        }
-        return acc;
-      }, {} as Record<string, any>),
-      generatedBy: "Angel Seafarers Documentation System",
-      timestamp: new Date().toISOString(),
-      certificateId: `ASF-${Date.now()}`
-    };
-    
-    console.log("Generated certificate data:", JSON.stringify(filledDocumentData, null, 2));
-    
-    setIsGenerating(false);
-    
-    toast({
-      title: "🎉 Certificate generated successfully!",
-      description: `Your ${selectedDocument.name} has been generated and is ready for download.`,
-    });
-    
-    // Download the generated certificate data
-    const element = document.createElement('a');
-    element.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filledDocumentData, null, 2));
-    element.download = `${selectedDocument.name.replace(/\s+/g, '_')}_${filledDocumentData.certificateId}.json`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+  const handleProceedToPreview = () => {
+    // Validate required fields
+    const missingFields = selectedDocument.fields
+      .filter(field => field.required && !formData[field.name])
+      .map(field => field.label);
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Missing required fields",
+        description: `Please fill in: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowPreview(true);
   };
 
   const getFieldValue = (fieldName: string) => {
@@ -99,6 +74,17 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
     return typeof value === 'string' ? value : String(value || '');
   };
 
+  if (showPreview) {
+    return (
+      <CertificatePreview
+        extractedData={extractedData}
+        selectedDocument={selectedDocument}
+        formData={formData}
+        onBackToFill={() => setShowPreview(false)}
+      />
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
       {/* Header */}
@@ -107,10 +93,10 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
           <Sparkles className="w-10 h-10 text-white" />
         </div>
         <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-6">
-          Generate Certificate
+          Fill Certificate Data
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Review the auto-filled data and generate your professional {selectedDocument.name}
+          Review and edit the auto-filled data for your {selectedDocument.name}
         </p>
       </div>
 
@@ -129,7 +115,7 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
               <p className="text-blue-600">✨ {selectedDocument.fields.length} fields auto-filled from extracted data</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-blue-600">Certificate ID will be auto-generated</p>
+              <p className="text-sm text-blue-600">Certificate will be generated as PDF</p>
               <p className="text-xs text-blue-500">Professional template with company branding</p>
             </div>
           </div>
@@ -153,7 +139,7 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
                   {field.required && <span className="text-red-500 ml-2 text-lg">*</span>}
                   {field.position && (
                     <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                      Pos: {field.position.x},{field.position.y}
+                      Positioned
                     </span>
                   )}
                 </Label>
@@ -228,26 +214,18 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
           </Button>
           
           <Button 
-            onClick={handleGenerateDocument}
-            disabled={isGenerating}
+            onClick={handleProceedToPreview}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-12 py-3 text-lg font-bold rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-110"
           >
-            {isGenerating ? (
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>🎨 Generating Certificate...</span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <Download className="w-6 h-6" />
-                <span>🎉 Generate Certificate</span>
-              </div>
-            )}
+            <div className="flex items-center space-x-3">
+              <ArrowRight className="w-6 h-6" />
+              <span>🎨 Preview & Generate Certificate</span>
+            </div>
           </Button>
         </div>
         
         <p className="text-sm text-gray-500 max-w-2xl mx-auto">
-          The generated certificate will include the company logo, official signatures, and all auto-filled data positioned correctly on the professional template.
+          Next step: Upload signatures, stamps, and logos, then generate your professional PDF certificate
         </p>
       </div>
     </div>
