@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, Edit, Eye, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Download, ArrowLeft, ArrowRight } from 'lucide-react';
 import { ExtractedData, DocumentTemplate } from '../pages/Index';
 import { generateCertificatePDF, downloadCertificate, CertificateData } from './CertificateGenerator';
 import AssetUploader from './AssetUploader';
@@ -34,7 +34,14 @@ const CertificatePreview = ({
   ];
 
   const handleDownload = async () => {
-    if (!previewRef.current) return;
+    if (!previewRef.current) {
+      toast({
+        title: "Error",
+        description: "Certificate preview not ready",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsGenerating(true);
     try {
@@ -63,12 +70,136 @@ const CertificatePreview = ({
     }
   };
 
+  const renderCertificatePreview = () => {
+    const candidateName = formData.candidateName || formData.participantName || formData.seamanName || extractedData.firstName;
+    
+    return (
+      <div 
+        ref={previewRef}
+        className="bg-white p-12 rounded-lg shadow-lg border-2 border-gray-200 min-h-[800px] relative mx-auto max-w-4xl"
+        style={{ 
+          aspectRatio: '297/210', // A4 landscape ratio
+          backgroundImage: selectedDocument.imageUrl ? `url(${selectedDocument.imageUrl})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Company Header */}
+        <div className="text-center mb-12 relative z-10">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 shadow-lg border">
+            <h1 className="text-4xl font-bold text-blue-900 mb-3">
+              {selectedDocument.companyInfo.name}
+            </h1>
+            <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+              CERTIFICATE OF {selectedDocument.name.toUpperCase()}
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto"></div>
+          </div>
+        </div>
+
+        {/* Certificate Content */}
+        <div className="text-center mb-8 relative z-10">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-8 shadow-lg border">
+            <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+              This is to certify that
+            </p>
+            <h3 className="text-3xl font-bold text-blue-900 mb-6 border-b-2 border-blue-200 pb-2">
+              {candidateName || 'Certificate Holder'}
+            </h3>
+            <p className="text-lg text-gray-700 mb-8">
+              has successfully completed the requirements for
+            </p>
+            <h4 className="text-xl font-semibold text-purple-700 mb-8">
+              {selectedDocument.name}
+            </h4>
+          </div>
+        </div>
+
+        {/* Certificate Details */}
+        <div className="grid grid-cols-2 gap-6 mb-8 relative z-10">
+          {selectedDocument.fields.map((field) => {
+            const value = formData[field.name] || 'Not provided';
+            if (field.name === 'candidateName' || field.name === 'participantName' || field.name === 'seamanName') {
+              return null; // Skip name fields as they're shown in the header
+            }
+            
+            return (
+              <div 
+                key={field.id} 
+                className="bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow border"
+              >
+                <span className="font-semibold text-gray-700 block mb-2">{field.label}:</span>
+                <span className="text-gray-900 font-medium text-lg">{value}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Assets Section */}
+        <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end relative z-10">
+          {/* Signatures */}
+          <div className="flex flex-col items-start">
+            {assets.signatures.length > 0 && (
+              <div className="mb-2">
+                <div className="flex space-x-4">
+                  {assets.signatures.slice(0, 2).map((sig, index) => (
+                    <div key={`sig-${index}`} className="text-center">
+                      <img 
+                        src={sig} 
+                        alt={`Signature ${index + 1}`}
+                        className="w-32 h-16 object-contain mb-1"
+                      />
+                      <div className="w-32 h-0.5 bg-gray-400"></div>
+                      <p className="text-xs text-gray-600 mt-1">Authorized Signature</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Stamps and Logos */}
+          <div className="flex items-end space-x-4">
+            {assets.stamps.map((stamp, index) => (
+              <img 
+                key={`stamp-${index}`} 
+                src={stamp} 
+                alt={`Stamp ${index + 1}`}
+                className="w-20 h-20 object-contain"
+              />
+            ))}
+            {assets.logos.map((logo, index) => (
+              <img 
+                key={`logo-${index}`} 
+                src={logo} 
+                alt={`Logo ${index + 1}`}
+                className="w-16 h-16 object-contain"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Certificate Footer */}
+        <div className="absolute bottom-2 left-8 right-8 flex justify-between text-sm text-gray-600 relative z-10">
+          <div className="bg-white/80 backdrop-blur-sm px-3 py-1 rounded">
+            <p>Certificate ID: ASF-{Date.now().toString().slice(-8)}</p>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm px-3 py-1 rounded">
+            <p>Issued: {new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
           <div>
             <h3 className="text-lg font-bold mb-4">Upload Additional Assets</h3>
+            <p className="text-gray-600 mb-6">Add signatures, stamps, and logos to your certificate</p>
             <AssetUploader 
               onAssetsUpload={setAssets}
               currentAssets={assets}
@@ -80,73 +211,8 @@ const CertificatePreview = ({
         return (
           <div>
             <h3 className="text-lg font-bold mb-4">Certificate Preview</h3>
-            <div 
-              ref={previewRef}
-              className="bg-white p-8 rounded-lg shadow-lg border-2 border-gray-200 min-h-[600px] relative"
-              style={{ 
-                backgroundImage: selectedDocument.imageUrl ? `url(${selectedDocument.imageUrl})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
-              }}
-            >
-              {/* Company Header */}
-              <div className="text-center mb-6 relative z-10">
-                <h2 className="text-3xl font-bold text-blue-900 mb-2">
-                  {selectedDocument.companyInfo.name}
-                </h2>
-                <h3 className="text-xl font-semibold text-gray-700">
-                  {selectedDocument.name}
-                </h3>
-              </div>
-
-              {/* Certificate Fields */}
-              <div className="space-y-4 relative z-10">
-                {selectedDocument.fields.map((field) => (
-                  <div 
-                    key={field.id} 
-                    className="flex justify-between items-center bg-white/80 p-3 rounded"
-                    style={field.position ? {
-                      position: 'absolute',
-                      left: `${field.position.x}px`,
-                      top: `${field.position.y}px`,
-                      width: field.position.width ? `${field.position.width}px` : 'auto'
-                    } : {}}
-                  >
-                    <span className="font-medium text-gray-700">{field.label}:</span>
-                    <span className="text-gray-900 font-semibold">
-                      {formData[field.name] || 'Not provided'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Assets */}
-              <div className="absolute bottom-4 right-4 flex space-x-2">
-                {assets.signatures.map((sig, index) => (
-                  <img 
-                    key={`sig-${index}`} 
-                    src={sig} 
-                    alt={`Signature ${index + 1}`}
-                    className="w-24 h-12 object-contain"
-                  />
-                ))}
-                {assets.stamps.map((stamp, index) => (
-                  <img 
-                    key={`stamp-${index}`} 
-                    src={stamp} 
-                    alt={`Stamp ${index + 1}`}
-                    className="w-16 h-16 object-contain"
-                  />
-                ))}
-              </div>
-
-              {/* Certificate Footer */}
-              <div className="absolute bottom-4 left-4 text-sm text-gray-600">
-                <p>Certificate ID: ASF-{Date.now()}</p>
-                <p>Generated: {new Date().toLocaleDateString()}</p>
-              </div>
-            </div>
+            <p className="text-gray-600 mb-6">Review your certificate before downloading</p>
+            {renderCertificatePreview()}
           </div>
         );
       
@@ -157,6 +223,9 @@ const CertificatePreview = ({
             <p className="text-gray-600">
               Your certificate is ready! Click the button below to generate and download the PDF.
             </p>
+            <div className="mb-6">
+              {renderCertificatePreview()}
+            </div>
             <Button
               onClick={handleDownload}
               disabled={isGenerating}
@@ -183,22 +252,22 @@ const CertificatePreview = ({
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Progress Steps */}
       <div className="mb-8">
-        <div className="flex justify-between items-center">
-          {steps.map((step) => (
+        <div className="flex justify-between items-center max-w-2xl mx-auto">
+          {steps.map((step, index) => (
             <div key={step.id} className="flex items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
                 currentStep >= step.id ? 'bg-blue-600' : 'bg-gray-300'
               }`}>
                 {step.id}
               </div>
-              <div className="ml-3">
+              <div className="ml-3 hidden sm:block">
                 <p className="font-medium text-gray-900">{step.title}</p>
                 <p className="text-sm text-gray-600">{step.description}</p>
               </div>
-              {step.id < steps.length && (
+              {index < steps.length - 1 && (
                 <div className={`w-20 h-1 mx-4 ${
                   currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'
                 }`} />
