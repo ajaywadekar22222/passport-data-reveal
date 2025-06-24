@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,9 +93,10 @@ const DocumentFillPage = ({ extractedData, selectedDocument, onBackToDocuments }
     return formData[fieldName] || '';
   };
 
-  const getSourceValue = (mappedTo: string | undefined) => {
+  const getSourceValue = (mappedTo: keyof ExtractedData | undefined) => {
     if (!mappedTo || !extractedData) return null;
-    return String(extractedData[mappedTo] || '');
+    const value = extractedData[mappedTo];
+    return typeof value === 'string' ? value : String(value || '');
   };
 
   return (

@@ -32,7 +32,30 @@ export interface ExtractedData {
   certificateNoBoset: string;
   certificateNoPalau1: string;
   certificateNoPalau2: string;
-  [key: string]: any;
+  [key: string]: string;
+}
+
+export interface PassportData {
+  lastName: string;
+  firstName: string;
+  dob: string;
+  cob: string;
+  citizenship: string;
+  sex: string;
+  hair: string;
+  eyes: string;
+  submitDate: string;
+  passport: string;
+  capacity: string;
+}
+
+export interface CertificateData {
+  certificateNoStcw: string;
+  certificateNoStsdsd: string;
+  certificateNoH2s: string;
+  certificateNoBoset: string;
+  certificateNoPalau1: string;
+  certificateNoPalau2: string;
 }
 
 export interface DocumentTemplate {
@@ -183,6 +206,36 @@ const Index = () => {
     setAdditionalImages(images);
   };
 
+  // Convert ExtractedData to separate PassportData and CertificateData
+  const getPassportData = (data: ExtractedData | null): PassportData | null => {
+    if (!data) return null;
+    return {
+      lastName: data.lastName,
+      firstName: data.firstName,
+      dob: data.dob,
+      cob: data.cob,
+      citizenship: data.citizenship,
+      sex: data.sex,
+      hair: data.hair,
+      eyes: data.eyes,
+      submitDate: data.submitDate,
+      passport: data.passport,
+      capacity: data.capacity,
+    };
+  };
+
+  const getCertificateData = (data: ExtractedData | null): CertificateData | null => {
+    if (!data) return null;
+    return {
+      certificateNoStcw: data.certificateNoStcw,
+      certificateNoStsdsd: data.certificateNoStsdsd,
+      certificateNoH2s: data.certificateNoH2s,
+      certificateNoBoset: data.certificateNoBoset,
+      certificateNoPalau1: data.certificateNoPalau1,
+      certificateNoPalau2: data.certificateNoPalau2,
+    };
+  };
+
   if (!currentUser) {
     return <LoginPage onLogin={handleLogin} />;
   }
@@ -258,10 +311,12 @@ const Index = () => {
       
       {currentPage === "data" && (
         <DataPage 
-          data={extractedData}
+          data={getPassportData(extractedData)}
+          certificateData={getCertificateData(extractedData)}
           onBackToUpload={handleBackToUpload}
           onConfirmData={handleDataConfirm}
-          uploadedImages={uploadedImages}
+          frontImage={uploadedImages[0] || null}
+          backImage={uploadedImages[1] || null}
         />
       )}
       

@@ -221,7 +221,12 @@ const AdminDocumentUpload = ({ onTemplateCreated }: AdminDocumentUploadProps) =>
       name: templateName,
       type: templateType || "certificate",
       fields: detectedFields,
-      imageUrl: uploadedFile === 'pdf-uploaded' ? undefined : uploadedFile || undefined
+      imageUrl: uploadedFile === 'pdf-uploaded' ? undefined : uploadedFile || undefined,
+      companyInfo: {
+        name: "Angel Seafarers Documentation Pvt. Ltd.",
+        logo: "/company-logo.png",
+        signature: "/company-signature.png"
+      }
     };
 
     onTemplateCreated(newTemplate);
